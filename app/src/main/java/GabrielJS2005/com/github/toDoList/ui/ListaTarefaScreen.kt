@@ -19,8 +19,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.Card
-import androidx.compose.material3.Checkbox
+import androidx.compose.material3.Card import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -31,6 +30,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -48,6 +52,7 @@ fun ListaTarefasScreen(
     onEditarTarefa: (Int) -> Unit
 ) {
     val tarefas by viewModel.tarefas.collectAsStateWithLifecycle()
+    var tarefaParaDeletar by remember { mutableStateOf<Tarefa?>(null) }
 
     ListaTarefasContent(
         tarefas = tarefas,
@@ -56,8 +61,33 @@ fun ListaTarefasScreen(
         onCheckedChange = { tarefa, concluida ->
             viewModel.atualizar(tarefa.copy(concluida = concluida))
         },
-        onDeletar = { tarefa -> viewModel.deletar(tarefa) }
+        onDeletar = { tarefa -> tarefaParaDeletar = tarefa }
     )
+
+    tarefaParaDeletar?.let { tarefa ->
+        AlertDialog(
+            onDismissRequest = { tarefaParaDeletar = null },
+            title = { Text(text = "Confirmar exclusão") },
+            text = { Text(text = "Tem certeza que deseja excluir a tarefa '${tarefa.titulo}'?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.deletar(tarefa)
+                        tarefaParaDeletar = null
+                    }
+                ) {
+                    Text("Excluir")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { tarefaParaDeletar = null }
+                ) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
