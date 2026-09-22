@@ -19,7 +19,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.Card import androidx.compose.material3.Checkbox
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -27,14 +32,13 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.TextButton
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -65,29 +69,69 @@ fun ListaTarefasScreen(
     )
 
     tarefaParaDeletar?.let { tarefa ->
-        AlertDialog(
-            onDismissRequest = { tarefaParaDeletar = null },
-            title = { Text(text = "Confirmar exclusão") },
-            text = { Text(text = "Tem certeza que deseja excluir a tarefa '${tarefa.titulo}'?") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        viewModel.deletar(tarefa)
-                        tarefaParaDeletar = null
-                    }
-                ) {
-                    Text("Excluir")
-                }
+        ConfirmarExclusaoDialog(
+            titulo = tarefa.titulo,
+            onConfirmar = {
+                viewModel.deletar(tarefa)
+                tarefaParaDeletar = null
             },
-            dismissButton = {
-                TextButton(
-                    onClick = { tarefaParaDeletar = null }
-                ) {
-                    Text("Cancelar")
-                }
-            }
+            onCancelar = { tarefaParaDeletar = null }
         )
     }
+}
+
+/**
+ * Diálogo de confirmação de exclusão de tarefa.
+ *
+ * Exibido sobre a tela da lista quando o usuário toca no ícone de exclusão.
+ * Apresenta o título da tarefa selecionada e duas ações:
+ * - [onCancelar]: fecha o diálogo sem alterar a lista.
+ * - [onConfirmar]: remove a tarefa e fecha o diálogo.
+ */
+@Composable
+fun ConfirmarExclusaoDialog(
+    titulo: String,
+    onConfirmar: () -> Unit,
+    onCancelar: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onCancelar,
+        icon = {
+            Icon(
+                imageVector = Icons.Default.Warning,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.error
+            )
+        },
+        title = {
+            Text(
+                text = "Excluir tarefa?",
+                style = MaterialTheme.typography.headlineSmall
+            )
+        },
+        text = {
+            Text(
+                text = "A tarefa \"$titulo\" será excluída permanentemente. Esta ação não pode ser desfeita.",
+                style = MaterialTheme.typography.bodyMedium
+            )
+        },
+        confirmButton = {
+            Button(
+                onClick = onConfirmar,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error,
+                    contentColor = MaterialTheme.colorScheme.onError
+                )
+            ) {
+                Text("Excluir")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onCancelar) {
+                Text("Cancelar")
+            }
+        }
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -262,4 +306,28 @@ private fun TarefaItemAtrasadaPreview() {
         onEditar = {},
         onDeletar = {}
     )
+}
+
+@Preview(showBackground = true, name = "Diálogo de confirmação de exclusão")
+@Composable
+private fun ConfirmarExclusaoDialogPreview() {
+    // Simula a tela da lista com o diálogo de confirmação sobreposto
+    val tarefas = listOf(
+        Tarefa(id = 1, titulo = "Estudar Room", descricao = "Revisar anotações e DAO", concluida = false),
+        Tarefa(id = 2, titulo = "Enviar atividade", descricao = "Upload no portal da FIAP", concluida = true)
+    )
+    Box {
+        ListaTarefasContent(
+            tarefas = tarefas,
+            onNovaTarefa = {},
+            onEditarTarefa = {},
+            onCheckedChange = { _, _ -> },
+            onDeletar = {}
+        )
+        ConfirmarExclusaoDialog(
+            titulo = "Estudar Room",
+            onConfirmar = {},
+            onCancelar = {}
+        )
+    }
 }
